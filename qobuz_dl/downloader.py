@@ -223,7 +223,7 @@ class Download:
             logger.info(f"{OFF}{track_title} was already downloaded")
             return
 
-        tqdm_download(url, filename, filename)
+        tqdm_download(url, filename, final_file)
         tag_function = metadata.tag_mp3 if is_mp3 else metadata.tag_flac
         try:
             tag_function(
