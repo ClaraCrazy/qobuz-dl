@@ -63,7 +63,7 @@ class Download:
             self.download_track()
 
     def download_release(self):
-        count = 0
+        count = 1
         meta = self.client.get_album_meta(self.item_id)
 
         if not meta.get("streamable"):
