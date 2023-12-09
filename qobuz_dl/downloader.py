@@ -97,7 +97,8 @@ class Download:
         folder_format, track_format = _clean_format_str(
             self.folder_format, self.track_format, file_format
         )
-        sanitized_title = sanitize_filepath(folder_format.format(**album_attr))
+        # Cwawa: FIX double sanitization needed... AC/DC
+        sanitized_title = sanitize_filename(sanitize_filepath(folder_format.format(**album_attr)))
         dirn = os.path.join(self.path, sanitized_title)
         os.makedirs(dirn, exist_ok=True)
 
