@@ -69,12 +69,29 @@ class Download:
         if not meta.get("streamable"):
             raise NonStreamable("This release is not streamable")
 
-        if self.albums_only and (
-            meta.get("release_type") != "album"
-            or meta.get("artist").get("name") == "Various Artists"
-        ):
-            logger.info(f'{OFF}Ignoring Single/EP/VA: {meta.get("title", "n/a")}')
-            return
+#       Fuck it, lets re-do all of this...
+        if self.albums_only:
+            if meta.get("release_type") != "album":
+                logger.info(f'{OFF}Ignoring Single/EP/VA: {meta.get("title", "n/a")}')
+                return
+
+            # TODO: Config option for these
+            if "live" in meta.get("release_tags") or [word for word in ["Live in", "Live at", "Live on"] if( word in meta.get("title") )]:
+                logger.info(f'{OFF}Ignoring Live Album: {meta.get("title", "n/a")}')
+                return
+
+            if meta.get("label").get("slug") in ["epic-legacy"]:
+                logger.info(f'{OFF}Ignoring Legacy Album: {meta.get("title", "n/a")}')
+                return
+
+            if meta.get("is_official") == False:
+                logger.info(f'{OFF}Ignoring Unofficial Album: {meta.get("title", "n/a")}')
+                return
+
+            if [word for word in ["Collection", "Hits"] if( word in meta.get("title") )]:
+                logger.info(f'{OFF}Ignoring Official Compilation Album: {meta.get("title", "n/a")}')
+                return
+
 
         album_title = _get_title(meta)
 
