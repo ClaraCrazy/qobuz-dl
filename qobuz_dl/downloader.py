@@ -235,6 +235,7 @@ class Download:
                 is_track,
                 self.embed_art,
             )
+            logger.info(f"{GREEN}Saved /// {final_file.replace(root_dir + '/', '')}")
         except Exception as e:
             logger.error(f"{RED}Error tagging the file: {e}", exc_info=True)
 
