@@ -2,6 +2,6 @@ pathvalidate
 requests
 mutagen
 tqdm
-pick==1.6.0
+pick==2.6.0
 beautifulsoup4
 colorama
