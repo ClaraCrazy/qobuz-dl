@@ -10,6 +10,6 @@ Missing or failing CI, unresolved migrations, custom source changes and explicit
 
 Set `DEPENDENCY_AUTOMATION_PAUSED=true` to pause merging. Manual workflow dispatch defaults to audit; schedules and completed CI can apply eligible updates. Privileged merge workflows never check out or run PR code.
 
-This repository currently lacks meaningful required CI. Updates are proposed, but merging remains blocked until the agent establishes and verifies coverage.
+Required CI builds and installs the wheel on Linux and Windows with Python 3.11 and 3.13. Eleven runtime tests exercise the actual HTTP metadata transport against a loopback fixture, pagination, rejected authentication and ineligible-account responses, SQLite persistence and connection cleanup, URL parsing, quality filtering and command arguments. Tests import the installed wheel in Python isolated mode and check that its declared requirements match requirements.txt, so a dependency edit cannot silently be replaced by an older setup.py pin. No real account, external service or music download is used. All matrix jobs, pip check and named runtime steps must pass before the trusted gate considers merging.
 
 For a signed agent-owned update, the administrator review also binds `author` to the PR login and the PR must use a `dependency-review/` branch. The gate preserves the exact tested signed commit through a guarded fast-forward. Source migrations remain separate commits with their own tests.

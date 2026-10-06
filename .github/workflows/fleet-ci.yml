@@ -1,0 +1,42 @@
+name: Fleet dependency CI
+'on':
+  push: {}
+  pull_request: {}
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: fleet-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: verify (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+        python:
+        - '3.11'
+        - '3.13'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Build installable wheel
+      run: 'python -m pip install build
+
+        python -m build --wheel'
+    - name: Install the built application
+      run: python -c "import pathlib,subprocess,sys; wheels=list(pathlib.Path('dist').glob('*.whl')); assert len(wheels)==1;
+        subprocess.run([sys.executable,'-m','pip','install',str(wheels[0])],check=True)"
+    - name: Check installed dependency consistency
+      run: python -m pip check
+    - name: Run actual runtime tests
+      run: python -I -m unittest discover -s tests -v

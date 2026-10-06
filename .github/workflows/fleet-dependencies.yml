@@ -1,4 +1,3 @@
-# Pause automatic merges with DEPENDENCY_AUTOMATION_PAUSED=true.
 name: Fleet dependency updates
 'on':
   workflow_dispatch:
@@ -13,6 +12,11 @@ name: Fleet dependency updates
         - apply
   schedule:
   - cron: 43 4,16 * * *
+  workflow_run:
+    workflows:
+    - Fleet dependency CI
+    types:
+    - completed
 permissions:
   contents: write
   pull-requests: write
@@ -33,23 +37,24 @@ jobs:
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
       with:
         script: "const policy = {\"repository\":\"ClaraCrazy/qobuz-dl\",\"branch\":\"master\",\"dependencyFiles\"\
-          :[\"requirements.txt\"],\"requiredWorkflows\":[],\"mergeMethod\":\"squash\"};\n// Embedded in a default-branch\
-          \ workflow. Never check out or execute PR code here.\nfunction compatibleVersion(before, after) {\n  const\
-          \ parse = value => /^v?(\\d+)\\.(\\d+)\\.(\\d+)$/.exec(value)?.slice(1).map(Number);\n  const old = parse(before),\
-          \ next = parse(after);\n  if (!old || !next || old[0] !== next[0]) return false;\n  if (old[0] === 0 &&\
-          \ old[1] !== next[1]) return false;\n  return next[1] > old[1] || next[1] === old[1] && next[2] > old[2];\n\
-          }\nfunction reviewedUpdate(pr, policy) {\n  return (policy.reviews || []).find(review => review.pr ===\
-          \ pr.number &&\n    review.head === pr.head.sha && review.base === pr.base.sha &&\n    review.compatibility\
-          \ === 'verified' && typeof review.rationale === 'string' && review.rationale.trim().length >= 40 &&\n\
-          \    Array.isArray(review.evidence) && review.evidence.length > 0 &&\n    review.evidence.every(url =>\
-          \ typeof url === 'string' && /^https:\\/\\//.test(url)) &&\n    Array.isArray(review.allowedFiles));\n\
-          }\nfunction classify(pr, commits, files, policy) {\n  if (!policy.requiredWorkflows.length) return 'no\
-          \ meaningful CI configured';\n  const review = reviewedUpdate(pr, policy);\n  const bot = pr.user.login\
-          \ === 'dependabot[bot]';\n  const reviewedAuthor = review?.author === pr.user.login;\n  if (pr.state !==\
-          \ 'open' || pr.draft || !bot && !reviewedAuthor) return 'not an open dependency PR approved by the agent';\n\
-          \  if (pr.base.ref !== policy.branch || pr.head.repo?.full_name?.toLowerCase() !== policy.repository.toLowerCase()\
-          \ || !pr.head.ref.startsWith(bot ? 'dependabot/' : 'dependency-review/')) return 'branch or repository\
-          \ mismatch';\n  if (pr.labels.some(label => /^(hold|manual|breaking|do-not-merge|review-required)$/i.test(label.name)))\
+          :[\"requirements.txt\"],\"requiredWorkflows\":[{\"path\":\"fleet-ci.yml\",\"steps\":[\"Build installable\
+          \ wheel\",\"Install the built application\",\"Check installed dependency consistency\",\"Run actual runtime\
+          \ tests\"]}],\"mergeMethod\":\"squash\"};\n// Embedded in a default-branch workflow. Never check out or\
+          \ execute PR code here.\nfunction compatibleVersion(before, after) {\n  const parse = value => /^v?(\\\
+          d+)\\.(\\d+)\\.(\\d+)$/.exec(value)?.slice(1).map(Number);\n  const old = parse(before), next = parse(after);\n\
+          \  if (!old || !next || old[0] !== next[0]) return false;\n  if (old[0] === 0 && old[1] !== next[1]) return\
+          \ false;\n  return next[1] > old[1] || next[1] === old[1] && next[2] > old[2];\n}\nfunction reviewedUpdate(pr,\
+          \ policy) {\n  return (policy.reviews || []).find(review => review.pr === pr.number &&\n    review.head\
+          \ === pr.head.sha && review.base === pr.base.sha &&\n    review.compatibility === 'verified' && typeof\
+          \ review.rationale === 'string' && review.rationale.trim().length >= 40 &&\n    Array.isArray(review.evidence)\
+          \ && review.evidence.length > 0 &&\n    review.evidence.every(url => typeof url === 'string' && /^https:\\\
+          /\\//.test(url)) &&\n    Array.isArray(review.allowedFiles));\n}\nfunction classify(pr, commits, files,\
+          \ policy) {\n  if (!policy.requiredWorkflows.length) return 'no meaningful CI configured';\n  const review\
+          \ = reviewedUpdate(pr, policy);\n  const bot = pr.user.login === 'dependabot[bot]';\n  const reviewedAuthor\
+          \ = review?.author === pr.user.login;\n  if (pr.state !== 'open' || pr.draft || !bot && !reviewedAuthor)\
+          \ return 'not an open dependency PR approved by the agent';\n  if (pr.base.ref !== policy.branch || pr.head.repo?.full_name?.toLowerCase()\
+          \ !== policy.repository.toLowerCase() || !pr.head.ref.startsWith(bot ? 'dependabot/' : 'dependency-review/'))\
+          \ return 'branch or repository mismatch';\n  if (pr.labels.some(label => /^(hold|manual|breaking|do-not-merge|review-required)$/i.test(label.name)))\
           \ return 'manual hold';\n  if (!review && /maintainer changes|\\bbreaking changes?\\b|\\bbreaking-change\\\
           b/i.test(pr.body || '')) return 'agent compatibility review pending';\n  if (commits.length !== 1 || commits[0].sha\
           \ !== pr.head.sha || commits[0].author?.login !== pr.user.login || !commits[0].commit.verification?.verified)\
