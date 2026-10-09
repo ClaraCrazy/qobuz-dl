@@ -56,8 +56,12 @@ jobs:
           \ !== policy.repository.toLowerCase() || !pr.head.ref.startsWith(bot ? 'dependabot/' : 'dependency-review/'))\
           \ return 'branch or repository mismatch';\n  if (pr.labels.some(label => /^(hold|manual|breaking|do-not-merge|review-required)$/i.test(label.name)))\
           \ return 'manual hold';\n  if (!review && /maintainer changes|\\bbreaking changes?\\b|\\bbreaking-change\\\
-          b/i.test(pr.body || '')) return 'agent compatibility review pending';\n  if (commits.length !== 1 || commits[0].sha\
-          \ !== pr.head.sha || commits[0].author?.login !== pr.user.login || !commits[0].commit.verification?.verified)\
+          b/i.test(pr.body || '')) return 'agent compatibility review pending';\n  const delegatedAuthor = !bot\
+          \ && reviewedAuthor && Object.hasOwn(review, 'commitAuthor');\n  const commitAuthor = delegatedAuthor\
+          \ ? review.commitAuthor : pr.user.login;\n  if (delegatedAuthor && (typeof commitAuthor !== 'string' ||\
+          \ !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$/.test(commitAuthor))) return 'invalid reviewed commit author';\n \
+          \ if (commits.length !== 1 || commits[0].sha !== pr.head.sha || commits[0].author?.login !== commitAuthor\
+          \ ||\n    delegatedAuthor && commits[0].committer?.login !== commitAuthor || !commits[0].commit.verification?.verified)\
           \ return 'unverified or edited dependency commit';\n  const message = commits[0].commit.message;\n  if\
           \ ((message.match(/^\\s*-?\\s*dependency-name:/gm) || []).length !== 1) return 'grouped or unknown dependency\
           \ metadata';\n  if (!review && !/^\\s*update-type: version-update:semver-(patch|minor)\\s*$/m.test(message))\
@@ -140,6 +144,6 @@ jobs:
           \ tested_head: pr.head.sha, workflow_run: context.runId}});\n    }\n    // One merge per run: later branches\
           \ must rebase and rerun their tests.\n    break;\n  }\n  core.info(JSON.stringify(summary));\n  await\
           \ core.summary.addHeading('Dependency update gate').addCodeBlock(JSON.stringify(summary,null,2),'json').write();\n\
-          \  return summary;\n}\n\nawait run(github, context, core, policy);\n"
+          \  return summary;\n}\nawait run(github, context, core, policy);\n"
       env:
         DEPENDENCY_REVIEWS: ${{ vars.DEPENDENCY_REVIEWS }}
